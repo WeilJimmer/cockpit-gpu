@@ -2688,17 +2688,19 @@ function safeFormatNumber(value, precision = 1) {
 
     const normalized = Number.isFinite(precision) ? Math.max(0, Math.min(20, Math.floor(Number(precision)))) : 1;
 
+    // cockpit.format_number(n, p) uses maximumSignificantDigits instead of
+    // maximumFractionDigits, which silently rounds e.g. 35.1 → 40 when p=1.
+    // Use toLocaleString with explicit fractionDigits to preserve precision.
     try {
-        return cockpit.format_number(value, normalized);
-    } catch (error) {
-        try {
-            return Number(value).toLocaleString(undefined, {
-                minimumFractionDigits: normalized,
-                maximumFractionDigits: normalized,
-            });
-        } catch (_ignore) {
-            return `${Number(value).toFixed(normalized)}`;
-        }
+        const lang = typeof cockpit?.language === 'string'
+            ? cockpit.language.replace('_', '-')
+            : undefined;
+        return Number(value).toLocaleString(lang, {
+            minimumFractionDigits: normalized,
+            maximumFractionDigits: normalized,
+        });
+    } catch (_ignore) {
+        return `${Number(value).toFixed(normalized)}`;
     }
 }
 
